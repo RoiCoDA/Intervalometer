@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  View, Text, StyleSheet, Pressable, FlatList, Alert, StatusBar, Dimensions, Animated 
+  View, Text, StyleSheet, Pressable, FlatList, Alert, StatusBar, Dimensions, Animated, ActivityIndicator 
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { COLORS, SPACING, SHADOWS } from '../constants/theme';
 import { Procedure, getProcedures } from '../utils/storage';
 import { Audio } from 'expo-av';
+import Voice, { SpeechResultsEvent } from '@react-native-voice/voice'; 
 
 const { width } = Dimensions.get('window');
 
@@ -23,6 +24,7 @@ export default function RunProcedureScreen() {
   const [timeLeft, setTimeLeft] = useState(0); 
   const [isRunning, setIsRunning] = useState(false);
   const [isStepFinished, setIsStepFinished] = useState(false);
+  const [isListening, setIsListening] = useState(false); 
 
   // Animation for Progress Bar
   const progressAnim = useRef(new Animated.Value(1)).current;
@@ -46,11 +48,50 @@ export default function RunProcedureScreen() {
     }
   }
 
+  // Voice logic
+
+  const startListening = async () => {
+    try {
+      setIsListening(true);
+      await Voice.start('en-US'); 
+    } catch (e) {
+      console.error("Voice Start Error:", e);
+    }
+  };
+
+  const stopListening = async () => {
+    try {
+      await Voice.stop();
+      setIsListening(false);
+    } catch (e) {
+      console.error("Voice Stop Error:", e);
+    }
+  };
+
+  const onSpeechResults = (e: SpeechResultsEvent) => {
+    if (e.value) {
+      // Check if any recognized phrase contains "go"
+      const saidGo = e.value.some(phrase => phrase.toLowerCase().includes('go'));
+      if (saidGo) {
+        handleNext();
+      }
+    }
+  };
+
+  
+
   // Load data
+
   useEffect(() => {
     if (params.id) {
       loadProcedure(params.id as string);
     }
+
+    // Voice Setup
+    Voice.onSpeechResults = onSpeechResults;
+    return () => {
+      Voice.destroy().then(Voice.removeAllListeners);
+    };
   }, [params.id]);
 
   const loadProcedure = async (id: string) => {
@@ -68,6 +109,7 @@ export default function RunProcedureScreen() {
   };
 
   // Timer
+
   useEffect(() => {
     let interval: any;
 
@@ -92,6 +134,7 @@ export default function RunProcedureScreen() {
           setIsStepFinished(true);
           clearInterval(interval);
           playSound();
+          startListening(); // Mic turns on
         }
       }, 50); 
     }
@@ -105,7 +148,10 @@ export default function RunProcedureScreen() {
     setIsRunning(true);
   };
 
-  const handleContinue = () => {
+  // 
+  const handleNext = () => {
+    stopListening(); // Stop mic immediately
+
     if (!procedure) return;
 
     const nextIndex = currentStepIndex + 1;
@@ -136,13 +182,14 @@ export default function RunProcedureScreen() {
         { 
           text: "Exit", 
           style: "destructive", 
-          onPress: () => router.back() 
+          onPress: () => {
+            stopListening();
+            router.back();
+          } 
         }
       ]
     );
   };
-
-
 
   // Renderers
 
@@ -216,8 +263,8 @@ export default function RunProcedureScreen() {
   let buttonDisabled = false;
 
   if (isStepFinished) {
-    buttonLabel = "CONTINUE"; 
-    buttonAction = handleContinue;
+    buttonLabel = isListening ? "LISTENING..." : "GO!"; // Visual cue for listening
+    buttonAction = handleNext;
     buttonColor = COLORS.success;
   } else if (isRunning) {
     buttonLabel = "RUNNING...";
@@ -270,8 +317,9 @@ export default function RunProcedureScreen() {
           onPress={buttonAction}
           disabled={buttonDisabled}
         >
+          {isListening && <Ionicons name="mic" size={24} color="white" style={{marginRight: 10}} />}
           <Text style={styles.mainButtonText}>{buttonLabel}</Text>
-          {isStepFinished && <Ionicons name="arrow-forward" size={24} color="white" style={{marginLeft: 10}} />}
+          {!isListening && isStepFinished && <Ionicons name="arrow-forward" size={24} color="white" style={{marginLeft: 10}} />}
         </Pressable>
         
       </View>
