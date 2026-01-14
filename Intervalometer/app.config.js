@@ -1,6 +1,6 @@
 const { withAndroidManifest } = require('@expo/config-plugins');
 
-// The Script: Forces Android to accept the conflict
+// The Script: Forces Android to accept the Voice/NewArch conflict
 const withAndroidToolsPatch = (config) => {
   return withAndroidManifest(config, async (config) => {
     const manifest = config.modResults.manifest;
@@ -22,6 +22,13 @@ module.exports = {
     orientation: "portrait",
     userInterfaceStyle: "automatic",
     newArchEnabled: true, 
+    
+    extra: {
+      eas: {
+        projectId: "68bb2296-244a-4ed8-8862-e8814418b7f3"
+      }
+    },
+
     ios: {
       supportsTablet: true,
       infoPlist: {
