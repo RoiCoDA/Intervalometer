@@ -1,6 +1,5 @@
 const { withAndroidManifest } = require('@expo/config-plugins');
 
-// The Script: Forces Android to accept the Voice/NewArch conflict
 const withAndroidToolsPatch = (config) => {
   return withAndroidManifest(config, async (config) => {
     const manifest = config.modResults.manifest;
@@ -9,6 +8,8 @@ const withAndroidToolsPatch = (config) => {
     manifest.$['xmlns:tools'] = 'http://schemas.android.com/tools';
 
     mainApplication.$['tools:replace'] = 'android:appComponentFactory';
+
+    mainApplication.$['android:appComponentFactory'] = 'androidx.core.app.CoreComponentFactory';
 
     return config;
   });
@@ -21,7 +22,7 @@ module.exports = {
     version: "1.0.0",
     orientation: "portrait",
     userInterfaceStyle: "automatic",
-    newArchEnabled: true, 
+    newArchEnabled: true,
     
     extra: {
       eas: {
@@ -55,7 +56,7 @@ module.exports = {
         {
           android: {
             useAndroidX: true,
-            enableJetifier: true 
+            enableJetifier: true
           }
         }
       ]
