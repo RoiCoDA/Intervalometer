@@ -1,4 +1,4 @@
-const { withAndroidManifest, withAppBuildGradle } = require('@expo/config-plugins');
+const { withAndroidManifest, withAppBuildGradle } = require('expo/config-plugins'); 
 
 const withAndroidToolsPatch = (config) => {
   return withAndroidManifest(config, async (config) => {
@@ -13,20 +13,28 @@ const withAndroidToolsPatch = (config) => {
   });
 };
 
-const withDuplicateClassFix = (config) => {
+const withGradleFixes = (config) => {
   return withAppBuildGradle(config, (config) => {
-    if (!config.modResults.contents.includes('configurations.all')) {
+    if (!config.modResults.contents.includes('resolutionStrategy')) {
       config.modResults.contents += `
       
-      // Force exclusion of old Android Support libraries to prevent duplicates
+      android {
+          packagingOptions {
+              // Fixes the "2 files found with path..." error
+              pickFirst 'META-INF/androidx.appcompat_appcompat.version'
+          }
+      }
+
       configurations.all {
           resolutionStrategy {
+              // Ban the specific libraries causing conflicts
               exclude group: 'com.android.support', module: 'support-compat'
               exclude group: 'com.android.support', module: 'support-core-ui'
               exclude group: 'com.android.support', module: 'support-core-utils'
               exclude group: 'com.android.support', module: 'support-fragment'
               exclude group: 'com.android.support', module: 'support-media-compat'
               exclude group: 'com.android.support', module: 'support-v4'
+              exclude group: 'com.android.support', module: 'appcompat-v7' // <--- Added this culprit
               exclude group: 'com.android.support', module: 'versionedparcelable'
           }
       }
@@ -43,7 +51,7 @@ module.exports = {
     version: "1.0.0",
     orientation: "portrait",
     userInterfaceStyle: "automatic",
-    newArchEnabled: true, 
+    newArchEnabled: true,
     
     extra: {
       eas: {
@@ -89,6 +97,6 @@ module.exports = {
   }
 };
 
-module.exports.expo = withDuplicateClassFix(
+module.exports.expo = withGradleFixes(
   withAndroidToolsPatch(module.exports.expo)
 );
