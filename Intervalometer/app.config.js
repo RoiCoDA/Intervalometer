@@ -13,6 +13,7 @@ const withAndroidToolsPatch = (config) => {
   });
 };
 
+
 const withGradleFixes = (config) => {
   return withAppBuildGradle(config, (config) => {
     if (!config.modResults.contents.includes('resolutionStrategy')) {
@@ -20,21 +21,20 @@ const withGradleFixes = (config) => {
       
       android {
           packagingOptions {
-              // Fixes the "2 files found with path..." error
               pickFirst 'META-INF/androidx.appcompat_appcompat.version'
+              pickFirst 'lib/**/libworklets.so'
           }
       }
 
       configurations.all {
           resolutionStrategy {
-              // Ban the specific libraries causing conflicts
               exclude group: 'com.android.support', module: 'support-compat'
               exclude group: 'com.android.support', module: 'support-core-ui'
               exclude group: 'com.android.support', module: 'support-core-utils'
               exclude group: 'com.android.support', module: 'support-fragment'
               exclude group: 'com.android.support', module: 'support-media-compat'
               exclude group: 'com.android.support', module: 'support-v4'
-              exclude group: 'com.android.support', module: 'appcompat-v7' // <--- Added this culprit
+              exclude group: 'com.android.support', module: 'appcompat-v7'
               exclude group: 'com.android.support', module: 'versionedparcelable'
           }
       }
@@ -51,7 +51,7 @@ module.exports = {
     version: "1.0.0",
     orientation: "portrait",
     userInterfaceStyle: "automatic",
-    newArchEnabled: true,
+    newArchEnabled: true, 
     
     extra: {
       eas: {
@@ -66,14 +66,20 @@ module.exports = {
         NSSpeechRecognitionUsageDescription: "Allow the app to recognize your voice for the 'Go' command."
       }
     },
+    icon: "./assets/icon.png",
     android: {
       edgeToEdgeEnabled: true,
       predictiveBackGestureEnabled: false,
+      supportsRtl: false,
       permissions: [
         "android.permission.RECORD_AUDIO",
         "android.permission.INTERNET"
       ],
-      package: "com.awesomeprojectboris.Intervalometer"
+      package: "com.awesomeprojectboris.Intervalometer",
+      adaptiveIcon: {
+        foregroundImage: "./assets/adaptive-icon.png",
+        backgroundColor: "#1a1a1a" 
+      },
     },
     web: {
       output: "static"

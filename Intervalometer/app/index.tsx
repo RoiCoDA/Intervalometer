@@ -2,6 +2,7 @@ import React, { useState, useCallback, useMemo } from 'react';
 import { 
   View, Text, StyleSheet, Pressable, FlatList, Alert, StatusBar, TextInput, Keyboard 
 } from 'react-native';
+
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,7 +17,7 @@ export default function Index() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // 1. Load Data
+  // Load Data
   useFocusEffect(
     useCallback(() => {
       loadData();
@@ -30,7 +31,7 @@ export default function Index() {
     setIsLoading(false);
   };
 
-  // 2. Filter Logic (Search)
+  // Filter Logic (Search)
   const filteredProcedures = useMemo(() => {
     if (!searchQuery) return procedures;
     return procedures.filter(p => 
@@ -38,11 +39,11 @@ export default function Index() {
     );
   }, [searchQuery, procedures]);
 
-  // 3. Delete Logic
+  // Delete Logic
   const handleDelete = (id: string, name: string) => {
     Alert.alert(
-      "Delete Procedure",
-      `Are you sure you want to delete "${name}"?`,
+      "Confirm Deletion",
+      `Are you sure you want to permanently delete the procedure "${name}"? This action cannot be undone.`,
       [
         { text: "Cancel", style: "cancel" },
         { 
@@ -70,12 +71,23 @@ export default function Index() {
     <Pressable 
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
       onPress={() => router.push({ pathname: '/run-procedure', params: { id: item.id } })}
-      onLongPress={() => handleDelete(item.id, item.name)}
-      delayLongPress={500}
     >
       <View style={styles.cardHeader}>
-        <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
-        <Ionicons name="play-circle" size={24} color={COLORS.primary} />
+        <View style={styles.titleRow}>
+             <Ionicons name="play-circle" size={24} color={COLORS.primary} style={{marginRight: 8}} />
+             <Text style={styles.cardTitle} numberOfLines={1}>{item.name}</Text>
+        </View>
+        
+        {/* Delete Button */}
+        <Pressable 
+            onPress={(e) => {
+                e.stopPropagation(); // Prevent opening the procedure
+                handleDelete(item.id, item.name);
+            }}
+            hitSlop={15}
+        >
+            <Ionicons name="trash-outline" size={22} color={COLORS.textDim} />
+        </Pressable>
       </View>
       
       {item.description ? (
@@ -103,7 +115,7 @@ export default function Index() {
         <Text style={styles.headerTitle}>Procedures</Text>
       </View>
 
-      {/* SEARCH BAR */}
+      {/* Search bar */}
       <View style={styles.searchContainer}>
         <Ionicons name="search" size={20} color={COLORS.textDim} style={styles.searchIcon} />
         <TextInput
@@ -140,9 +152,9 @@ export default function Index() {
       />
 
       <Pressable 
-        style={styles.fab} 
-        onPress={() => router.push('/create-procedure')}
-      >
+  style={[styles.fab, { bottom: 30 + insets.bottom }]} 
+  onPress={() => router.push('/create-procedure')}
+>
         <Ionicons name="add" size={32} color="#FFF" />
       </Pressable>
     </View>
@@ -164,7 +176,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.text,
   },
-  // Search Styles
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -210,12 +221,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: SPACING.s,
   },
+  titleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      flex: 1,
+  },
   cardTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: COLORS.text,
     flex: 1,
-    marginRight: SPACING.s,
   },
   cardDesc: {
     fontSize: 14,
