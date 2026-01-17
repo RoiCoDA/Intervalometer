@@ -68,9 +68,10 @@ module.exports = {
     },
     icon: "./assets/icon.png",
     android: {
-      edgeToEdgeEnabled: true,
+      edgeToEdgeEnabled: false,
       predictiveBackGestureEnabled: false,
       supportsRtl: false,
+      softwareKeyboardLayoutMode: "resize",
       permissions: [
         "android.permission.RECORD_AUDIO",
         "android.permission.INTERNET"

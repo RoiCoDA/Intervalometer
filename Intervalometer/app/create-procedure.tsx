@@ -372,8 +372,11 @@ export default function CreateProcedureScreen() {
         {/* Footer */}
         <View style={[
             styles.addStepContainer, 
+              { 
+                  paddingBottom: 20 
+              },
             editingStepId && styles.editContainerActive
-        ]}>
+            ]}>
           <View style={{flexDirection: 'row', justifyContent: 'space-between', marginBottom: 5}}>
               <Text style={[styles.label, editingStepId && { color: COLORS.success }]}>
                   {editingStepId ? "EDITING STEP" : "NEW STEP"}
@@ -433,14 +436,8 @@ export default function CreateProcedureScreen() {
   );
 
   return (
-    <View style={{ flex: 1, backgroundColor: COLORS.background }}>
-      <Stack.Screen options={{
-        title: 'Editor',
-        headerStyle: { backgroundColor: '#37474F' }, 
-        headerTintColor: '#fff',
-      }} />
-
-      {Platform.OS === 'ios' ? (
+  <View style={{ flex: 1, backgroundColor: COLORS.background }}>
+     {Platform.OS === 'ios' ? (
         <KeyboardAvoidingView 
           behavior="padding" 
           style={{ flex: 1 }}
@@ -453,8 +450,8 @@ export default function CreateProcedureScreen() {
           {renderContent()}
         </View>
       )}
-    </View>
-  );
+  </View>
+);
 }
 
 const styles = StyleSheet.create({
