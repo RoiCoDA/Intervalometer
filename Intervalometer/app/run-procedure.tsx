@@ -461,6 +461,7 @@ export default function RunProcedureScreen() {
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         contentContainerStyle={styles.listContent}
+        style={styles.list}
       />
 
       {/* Footer */}
@@ -520,9 +521,12 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: COLORS.text,
   },
+  list: {
+    flex: 1,
+  },
   listContent: {
     padding: SPACING.m,
-    paddingBottom: 150, 
+    paddingBottom: SPACING.m,
   },
   
   card: {
@@ -607,16 +611,12 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
   },
   footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: COLORS.background,
     padding: SPACING.l,
     borderTopWidth: 1,
     borderTopColor: '#333',
     flexDirection: 'row',
-    alignItems: 'flex-end', 
+    alignItems: 'flex-end',
   },
   abortButton: {
     width: 70,
