@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  View, Text, TextInput, Pressable, StyleSheet, 
-  Animated, Dimensions, KeyboardAvoidingView, Platform, ScrollView, Alert, Keyboard 
+import {
+  View, Text, TextInput, Pressable, StyleSheet,
+  Animated, Dimensions, KeyboardAvoidingView, Platform, ScrollView, Alert, Keyboard
 } from 'react-native';
+import DraggableFlatList, { ScaleDecorator, RenderItemParams } from 'react-native-draggable-flatlist';
 import { useRouter, Stack, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -328,45 +329,51 @@ export default function CreateProcedureScreen() {
         </View>
 
         <View style={{ flex: 1 }}>
-          <ScrollView 
+          <DraggableFlatList
+            data={steps}
+            keyExtractor={(item) => item.id}
+            onDragEnd={({ data }) => setSteps(data)}
+            onDragBegin={() => { if (editingStepId) cancelEditing(); }}
             style={styles.stepList}
-            contentContainerStyle={{ paddingBottom: 20 }} 
+            contentContainerStyle={{ paddingBottom: 20 }}
             keyboardShouldPersistTaps="handled"
-          >
-            {steps.length === 0 ? (
-              <Text style={styles.emptyText}>No steps added yet.</Text>
-            ) : (
-              steps.map((s, index) => (
-                <View key={s.id} style={[
-                    styles.stepCard, 
-                    editingStepId === s.id && styles.stepCardEditing 
-                ]}>
-                  <View style={styles.stepInfo}>
-                    <Text style={styles.stepIndex}>{index + 1}</Text>
-                    <View>
-                      <Text style={styles.stepName}>{s.name}</Text>
-                      <Text style={styles.stepDuration}>
-                        {getFormattedDuration(s.duration)}
-                      </Text>
+            ListEmptyComponent={<Text style={styles.emptyText}>No steps added yet.</Text>}
+            renderItem={({ item: s, drag, isActive, getIndex }: RenderItemParams<typeof steps[0]>) => {
+              const index = getIndex() ?? 0;
+              return (
+                <ScaleDecorator>
+                  <View style={[
+                    styles.stepCard,
+                    editingStepId === s.id && styles.stepCardEditing,
+                    isActive && styles.stepCardDragging,
+                  ]}>
+                    <Pressable onLongPress={drag} style={styles.dragHandle} hitSlop={8}>
+                      <Ionicons name="reorder-three-outline" size={22} color={COLORS.textDim} />
+                    </Pressable>
+                    <View style={styles.stepInfo}>
+                      <Text style={styles.stepIndex}>{index + 1}</Text>
+                      <View>
+                        <Text style={styles.stepName}>{s.name}</Text>
+                        <Text style={styles.stepDuration}>{getFormattedDuration(s.duration)}</Text>
+                      </View>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
+                      <Pressable onPress={() => startEditing(s)} hitSlop={10}>
+                        <Ionicons
+                          name="create-outline"
+                          size={22}
+                          color={editingStepId === s.id ? COLORS.success : COLORS.textDim}
+                        />
+                      </Pressable>
+                      <Pressable onPress={() => removeStep(s.id)} hitSlop={10}>
+                        <Ionicons name="trash-outline" size={22} color={COLORS.error} />
+                      </Pressable>
                     </View>
                   </View>
-                  
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
-                    <Pressable onPress={() => startEditing(s)} hitSlop={10}>
-                        <Ionicons 
-                            name="create-outline" 
-                            size={22} 
-                            color={editingStepId === s.id ? COLORS.success : COLORS.textDim} 
-                        />
-                    </Pressable>
-                    <Pressable onPress={() => removeStep(s.id)} hitSlop={10}>
-                        <Ionicons name="trash-outline" size={22} color={COLORS.error} />
-                    </Pressable>
-                  </View>
-                </View>
-              ))
-            )}
-          </ScrollView>
+                </ScaleDecorator>
+              );
+            }}
+          />
         </View>
 
         {/* Footer */}
@@ -547,6 +554,16 @@ const styles = StyleSheet.create({
     borderColor: COLORS.success,
     borderWidth: 1,
     backgroundColor: '#1B2E24',
+  },
+  stepCardDragging: {
+    backgroundColor: '#2e2e3a',
+    borderColor: COLORS.primary,
+    borderWidth: 1,
+  },
+  dragHandle: {
+    paddingRight: SPACING.s,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   stepInfo: {
     flexDirection: 'row',
