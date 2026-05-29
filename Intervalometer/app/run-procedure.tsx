@@ -36,6 +36,7 @@ export default function RunProcedureScreen() {
   const indexRef = useRef(0);
   const procedureRef = useRef<Procedure | null>(null);
   const shouldRestartVoice = useRef(false);
+  const lastSpeechActivityRef = useRef(0); // timestamp of last partial result
   
   // Navigation Guards
   const isExiting = useRef(false); 
@@ -125,6 +126,7 @@ export default function RunProcedureScreen() {
   };
 
   const onSpeechPartialResults = (e: SpeechResultsEvent) => {
+    lastSpeechActivityRef.current = Date.now();
     checkPhraseForGo(e.value);
   };
 
@@ -132,16 +134,25 @@ export default function RunProcedureScreen() {
     checkPhraseForGo(e.value);
   };
 
+  // Returns ms to wait before restarting, based on whether speech was recently active.
+  // If the engine ended mid-utterance (partial results came in recently), we wait longer
+  // so the audio session fully clears and we don't cut the user off.
+  const getRestartDelay = (baseDelay: number) => {
+    const timeSinceActivity = Date.now() - lastSpeechActivityRef.current;
+    const speechWasActive = timeSinceActivity < 1000;
+    return speechWasActive ? Math.max(baseDelay, 1200) : baseDelay;
+  };
+
   // Speech Ended (Silence or End of Session)
   const onSpeechEnd = () => {
     if (shouldRestartVoice.current && !isExiting.current) {
-        setVoiceStatus('restarting'); 
-        // Fast restart for normal end
+        setVoiceStatus('restarting');
+        const delay = getRestartDelay(400);
         setTimeout(async () => {
             if (shouldRestartVoice.current && !isExiting.current) {
                 try { await Voice.start('en-US'); } catch(e) {}
             }
-        }, 300);
+        }, delay);
     } else {
         setVoiceStatus('idle');
     }
@@ -150,24 +161,32 @@ export default function RunProcedureScreen() {
   // Error Handling (Noise, Timeout, etc)
   const onSpeechError = (e: any) => {
     const code = e.error?.code;
-    
+
     // Smart Delay:
-    // 6 = Timeout (Silence) -> Fast Retry
-    // 7 = No Match (Noise) -> Fast Retry
-    // 5 = Busy/Client Error -> Slow Retry ( trying to avoid beep loop)
-    const isMinorError = code === '6' || code === '7';
-    const delay = isMinorError ? 500 : 1500;
+    // 6 = Timeout (Silence) -> Fast Retry (user wasn't speaking, no risk of interruption)
+    // 7 = No Match (Noise) -> Adaptive Retry (may have been mid-speech)
+    // 5 = Busy/Client Error -> Slow Retry (avoid audio session conflict)
+    let baseDelay: number;
+    if (code === '6') {
+        baseDelay = 400; // pure silence timeout — restart quickly
+    } else if (code === '7') {
+        baseDelay = 600; // noise/no-match — adaptive: may have been mid-utterance
+    } else {
+        baseDelay = 1500; // busy/other — give the OS time to clear
+    }
+
+    const delay = (code === '6') ? baseDelay : getRestartDelay(baseDelay);
 
     if (shouldRestartVoice.current && !isExiting.current) {
-        setVoiceStatus('restarting'); 
+        setVoiceStatus('restarting');
         setTimeout(async () => {
             if (shouldRestartVoice.current && !isExiting.current) {
                 try {
-                    await Voice.stop(); 
+                    await Voice.stop();
                     await Voice.start('en-US');
                 } catch(e) {}
             }
-        }, delay); 
+        }, delay);
     } else {
         setIsListening(false);
         setVoiceStatus('error');
