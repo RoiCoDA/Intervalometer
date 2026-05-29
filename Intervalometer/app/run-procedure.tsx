@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  View, Text, StyleSheet, Pressable, FlatList, Alert, StatusBar, Dimensions, Animated 
+  View, Text, StyleSheet, Pressable, FlatList, Alert, Dimensions, Animated
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -445,8 +445,6 @@ export default function RunProcedureScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="light-content" />
-      
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.headerTitle} numberOfLines={1}>

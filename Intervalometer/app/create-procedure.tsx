@@ -3,7 +3,6 @@ import {
   View, Text, TextInput, Pressable, StyleSheet,
   Animated, Dimensions, KeyboardAvoidingView, Platform, ScrollView, Alert, Keyboard
 } from 'react-native';
-import DraggableFlatList, { ScaleDecorator, RenderItemParams } from 'react-native-draggable-flatlist';
 import { useRouter, Stack, useNavigation } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -329,51 +328,71 @@ export default function CreateProcedureScreen() {
         </View>
 
         <View style={{ flex: 1 }}>
-          <DraggableFlatList
-            data={steps}
-            keyExtractor={(item) => item.id}
-            onDragEnd={({ data }) => setSteps(data)}
-            onDragBegin={() => { if (editingStepId) cancelEditing(); }}
+          <ScrollView
             style={styles.stepList}
             contentContainerStyle={{ paddingBottom: 20 }}
             keyboardShouldPersistTaps="handled"
-            ListEmptyComponent={<Text style={styles.emptyText}>No steps added yet.</Text>}
-            renderItem={({ item: s, drag, isActive, getIndex }: RenderItemParams<typeof steps[0]>) => {
-              const index = getIndex() ?? 0;
-              return (
-                <ScaleDecorator>
-                  <View style={[
-                    styles.stepCard,
-                    editingStepId === s.id && styles.stepCardEditing,
-                    isActive && styles.stepCardDragging,
-                  ]}>
-                    <Pressable onLongPress={drag} style={styles.dragHandle} hitSlop={8}>
-                      <Ionicons name="reorder-three-outline" size={22} color={COLORS.textDim} />
+          >
+            {steps.length === 0 ? (
+              <Text style={styles.emptyText}>No steps added yet.</Text>
+            ) : (
+              steps.map((s, index) => (
+                <View key={s.id} style={[
+                  styles.stepCard,
+                  editingStepId === s.id && styles.stepCardEditing,
+                ]}>
+                  {/* Reorder buttons */}
+                  <View style={styles.reorderButtons}>
+                    <Pressable
+                      onPress={() => {
+                        if (index === 0) return;
+                        const next = [...steps];
+                        [next[index - 1], next[index]] = [next[index], next[index - 1]];
+                        setSteps(next);
+                      }}
+                      hitSlop={6}
+                      style={{ opacity: index === 0 ? 0.2 : 1 }}
+                    >
+                      <Ionicons name="chevron-up" size={16} color={COLORS.textDim} />
                     </Pressable>
-                    <View style={styles.stepInfo}>
-                      <Text style={styles.stepIndex}>{index + 1}</Text>
-                      <View>
-                        <Text style={styles.stepName}>{s.name}</Text>
-                        <Text style={styles.stepDuration}>{getFormattedDuration(s.duration)}</Text>
-                      </View>
-                    </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
-                      <Pressable onPress={() => startEditing(s)} hitSlop={10}>
-                        <Ionicons
-                          name="create-outline"
-                          size={22}
-                          color={editingStepId === s.id ? COLORS.success : COLORS.textDim}
-                        />
-                      </Pressable>
-                      <Pressable onPress={() => removeStep(s.id)} hitSlop={10}>
-                        <Ionicons name="trash-outline" size={22} color={COLORS.error} />
-                      </Pressable>
+                    <Pressable
+                      onPress={() => {
+                        if (index === steps.length - 1) return;
+                        const next = [...steps];
+                        [next[index + 1], next[index]] = [next[index], next[index + 1]];
+                        setSteps(next);
+                      }}
+                      hitSlop={6}
+                      style={{ opacity: index === steps.length - 1 ? 0.2 : 1 }}
+                    >
+                      <Ionicons name="chevron-down" size={16} color={COLORS.textDim} />
+                    </Pressable>
+                  </View>
+
+                  <View style={styles.stepInfo}>
+                    <Text style={styles.stepIndex}>{index + 1}</Text>
+                    <View>
+                      <Text style={styles.stepName}>{s.name}</Text>
+                      <Text style={styles.stepDuration}>{getFormattedDuration(s.duration)}</Text>
                     </View>
                   </View>
-                </ScaleDecorator>
-              );
-            }}
-          />
+
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 15 }}>
+                    <Pressable onPress={() => startEditing(s)} hitSlop={10}>
+                      <Ionicons
+                        name="create-outline"
+                        size={22}
+                        color={editingStepId === s.id ? COLORS.success : COLORS.textDim}
+                      />
+                    </Pressable>
+                    <Pressable onPress={() => removeStep(s.id)} hitSlop={10}>
+                      <Ionicons name="trash-outline" size={22} color={COLORS.error} />
+                    </Pressable>
+                  </View>
+                </View>
+              ))
+            )}
+          </ScrollView>
         </View>
 
         {/* Footer */}
@@ -555,15 +574,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     backgroundColor: '#1B2E24',
   },
-  stepCardDragging: {
-    backgroundColor: '#2e2e3a',
-    borderColor: COLORS.primary,
-    borderWidth: 1,
-  },
-  dragHandle: {
-    paddingRight: SPACING.s,
+  reorderButtons: {
     justifyContent: 'center',
     alignItems: 'center',
+    gap: 2,
+    marginRight: SPACING.s,
   },
   stepInfo: {
     flexDirection: 'row',

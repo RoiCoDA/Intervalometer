@@ -1,6 +1,8 @@
 import { Stack } from "expo-router";
 import { useEffect } from "react";
 import { I18nManager } from "react-native";
+import { StatusBar } from "expo-status-bar";
+import * as SystemUI from "expo-system-ui";
 
 export default function RootLayout() {
   
@@ -10,9 +12,13 @@ export default function RootLayout() {
       I18nManager.allowRTL(false);
       I18nManager.forceRTL(false);
     }
+    // Match system bars to the app's dark background
+    SystemUI.setBackgroundColorAsync('#1a1a1a');
   }, []);
 
   return (
+    <>
+    <StatusBar style="light" backgroundColor="#1a1a1a" />
     <Stack
       screenOptions={{
         
@@ -44,5 +50,6 @@ export default function RootLayout() {
         }}
       />
     </Stack>
+    </>
   );
 }
