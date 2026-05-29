@@ -53,9 +53,15 @@ You can exit at any time using the **Exit** button — a confirmation prompt pre
 
 ---
 
-## Building the APK
+## Installation
 
-No pre-built APK is provided. To build your own:
+Download the latest APK from the [Releases page](https://github.com/RoiCoDA/Intervalometer/releases) and transfer it to your Android device. Open the file to install (enable *Install from unknown sources* in Android settings if prompted).
+
+---
+
+## Building from source
+
+If you'd prefer to build it yourself:
 
 ### Prerequisites
 - [Node.js](https://nodejs.org/) (v18 or newer)
@@ -84,12 +90,6 @@ eas build --platform android --profile preview --local
 The `preview` profile produces a standalone `.apk` you can sideload onto any Android device.
 
 > **Note:** First-time builds download the Android build tools automatically and may take a few minutes.
-
-To install the APK on a device:
-```bash
-adb install path/to/your-build.apk
-```
-Or transfer the file to your phone and open it directly (enable *Install from unknown sources* in Android settings if prompted).
 
 ---
 
